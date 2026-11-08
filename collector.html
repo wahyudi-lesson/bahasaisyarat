@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Studio Perekam Dataset Isyarat (126 Fitur)</title>
+  <!-- MediaPipe Hands & Camera Utils -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <!-- Skrip Normalisasi 126 Fitur -->
   <script src="js/normalizer.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -42,10 +44,13 @@
     
     .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .status-box { background: #0f172a; padding: 10px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155; }
-    .table-container { max-height: 120px; overflow-y: auto; font-size: 0.8rem; border: 1px solid #334155; border-radius: 6px; }
+    
+    .table-container { max-height: 150px; overflow-y: auto; font-size: 0.8rem; border: 1px solid #334155; border-radius: 6px; }
     table { width: 100%; border-collapse: collapse; }
     th { background: #0f172a; color: #94a3b8; position: sticky; top: 0; }
     td, th { padding: 6px 10px; text-align: left; border-bottom: 1px solid #334155; }
+    .btn-del-row { background: #ef4444; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; cursor: pointer; font-weight: 600; }
+    .btn-del-row:hover { background: #dc2626; }
     
     details.gh-config { background: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #334155; font-size: 0.8rem; }
     details.gh-config summary { cursor: pointer; color: #94a3b8; font-weight: 600; }
@@ -104,7 +109,13 @@
 
       <div class="table-container">
         <table>
-          <thead><tr><th>Label</th><th>Jumlah Sampel</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Jumlah Sampel</th>
+              <th style="text-align:right;">Aksi</th>
+            </tr>
+          </thead>
           <tbody id="summaryBody"></tbody>
         </table>
       </div>
@@ -137,7 +148,7 @@
     const ghTokenInput = document.getElementById('ghToken');
 
     let current126Landmarks = null;
-    let dataset = [];
+    let dataset = []; // Array kumpulan [x0, ..., z41, label]
     let labelCounts = {};
     let latestFileSha = null;
 
@@ -154,6 +165,7 @@
       });
     });
 
+    // Web Audio API Beeper
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function beep(freq = 600, duration = 120) {
       if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -166,6 +178,7 @@
       setTimeout(() => osc.stop(), duration);
     }
 
+    // Sambungan Kerangka Sendi Jari
     const HAND_CONNECTIONS = [
       [0, 1], [1, 2], [2, 3], [3, 4],
       [0, 5], [5, 6], [6, 7], [7, 8],
@@ -175,6 +188,7 @@
       [0, 17]
     ];
 
+    // Presets Cepat
     const presets = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ..."0123456789", "HALO", "TERIMA_KASIH", "MAAF", "SAMA_SAMA"];
     const presetBox = document.getElementById('presetContainer');
     presets.forEach(p => {
@@ -185,6 +199,7 @@
       presetBox.appendChild(b);
     });
 
+    // Inisialisasi MediaPipe Hands
     const hands = new Hands({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
     });
@@ -203,6 +218,7 @@
 
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         results.multiHandLandmarks.forEach((landmarks) => {
+          // Garis sendi hijau
           ctx.strokeStyle = '#22c55e';
           ctx.lineWidth = 3;
           HAND_CONNECTIONS.forEach(([i, j]) => {
@@ -214,6 +230,7 @@
             ctx.stroke();
           });
 
+          // Titik sendi merah
           landmarks.forEach(pt => {
             ctx.beginPath();
             ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 4, 0, 2 * Math.PI);
@@ -238,6 +255,7 @@
       lblStatus.style.color = "#10b981";
     });
 
+    // Logika Rekam Otomatis
     btnRecord.onclick = async () => {
       const label = targetLabelInput.value.trim().toUpperCase();
       if (!label) return alert("Harap isi label terlebih dahulu!");
@@ -277,14 +295,35 @@
       btnRecord.disabled = false;
     };
 
+    // Tampilkan data ke tabel lengkap dengan tombol Hapus
     function updateTable() {
       lblTotalRows.textContent = dataset.length;
       summaryBody.innerHTML = '';
+      
       for (const [k, v] of Object.entries(labelCounts)) {
-        summaryBody.innerHTML += `<tr><td><b>${k}</b></td><td>${v} frame</td></tr>`;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><b>${k}</b></td>
+          <td>${v} frame</td>
+          <td style="text-align:right;">
+            <button class="btn-del-row" onclick="deleteClass('${k}')">🗑️ Hapus</button>
+          </td>
+        `;
+        summaryBody.appendChild(tr);
       }
     }
 
+    // Fungsi menghapus 1 label tertentu dari memori dataset
+    window.deleteClass = function(targetLabel) {
+      if (!confirm(`Hapus seluruh data rekaman untuk label "${targetLabel}" dari memori?`)) return;
+      dataset = dataset.filter(row => row[row.length - 1] !== targetLabel);
+      delete labelCounts[targetLabel];
+      updateTable();
+      lblStatus.textContent = `Label ${targetLabel} berhasil dihapus dari memori.`;
+      lblStatus.style.color = "#ef4444";
+    };
+
+    // Bangun Format Teks CSV
     function buildCsvString() {
       const headers = [];
       for (let i = 0; i < 42; i++) {
@@ -294,6 +333,7 @@
       return headers.join(',') + '\n' + dataset.map(row => row.join(',')).join('\n') + '\n';
     }
 
+    // Kirim Langsung ke GitHub API & Trigger Auto-Train Actions
     document.getElementById('btnPushGitHub').onclick = async () => {
       if (dataset.length === 0) return alert("Belum ada data rekaman untuk dikirim!");
 
@@ -366,6 +406,7 @@
       }
     };
 
+    // Tarik Dataset Lama dari GitHub (Sinkronisasi Data)
     document.getElementById('btnPullGitHub').onclick = async () => {
       const owner = ghOwnerInput.value.trim();
       const repo = ghRepoInput.value.trim();
@@ -412,6 +453,7 @@
       }
     };
 
+    // Unduh Cadangan CSV Manual
     document.getElementById('btnDownload').onclick = () => {
       if (dataset.length === 0) return alert("Belum ada data untuk diunduh!");
       const csvContent = buildCsvString();
@@ -424,8 +466,9 @@
       URL.revokeObjectURL(url);
     };
 
+    // Kosongkan Memori Lokal
     document.getElementById('btnClear').onclick = () => {
-      if (confirm("Kosongkan data yang tersimpan di memori saat ini?")) {
+      if (confirm("Kosongkan seluruh data yang tersimpan di memori saat ini?")) {
         dataset = [];
         labelCounts = {};
         updateTable();

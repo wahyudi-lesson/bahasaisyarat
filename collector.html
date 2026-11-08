@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Studio Perekam Dataset Isyarat (126 Fitur)</title>
   <!-- MediaPipe Hands & Camera Utils -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -11,50 +11,49 @@
   <script src="js/normalizer.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #0f172a; color: #f8fafc; padding: 16px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    body { background: #0f172a; color: #f8fafc; padding: 12px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
     
-    header { width: 100%; max-width: 1100px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-    .header-titles h1 { font-size: 1.35rem; color: #38bdf8; }
-    .header-titles p { font-size: 0.85rem; color: #94a3b8; }
-    .nav-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border-radius: 8px; border: 1px solid #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; transition: 0.2s; }
+    header { width: 100%; max-width: 1100px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .header-titles h1 { font-size: 1.2rem; color: #38bdf8; }
+    .header-titles p { font-size: 0.8rem; color: #94a3b8; }
+    .nav-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 0.8rem; font-weight: 600; text-decoration: none; border-radius: 8px; border: 1px solid #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
     .nav-btn:hover { background: #0284c7; color: #fff; }
 
-    .main-container { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; max-width: 1100px; width: 100%; }
+    .main-container { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; max-width: 1100px; width: 100%; }
     
     .video-card { position: relative; width: 480px; max-width: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 2px solid #334155; aspect-ratio: 4/3; }
     video, canvas { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
     canvas { position: absolute; top: 0; left: 0; }
-    .countdown-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: 800; color: #facc15; background: rgba(0,0,0,0.55); pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 10; text-shadow: 0 4px 12px rgba(0,0,0,0.8); }
+    .countdown-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 800; color: #facc15; background: rgba(0,0,0,0.55); pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 10; text-shadow: 0 4px 12px rgba(0,0,0,0.8); }
     
-    .controls-card { flex: 1; min-width: 320px; background: #1e293b; padding: 16px; border-radius: 12px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 12px; }
-    .input-group label { font-size: 0.8rem; font-weight: 600; color: #94a3b8; display: block; margin-bottom: 4px; }
-    .input-group input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.95rem; }
+    .controls-card { flex: 1; min-width: 300px; max-width: 100%; background: #1e293b; padding: 14px; border-radius: 12px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 10px; }
+    .input-group label { font-size: 0.78rem; font-weight: 600; color: #94a3b8; display: block; margin-bottom: 4px; }
+    .input-group input { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.9rem; }
     
-    .quick-tags { display: flex; flex-wrap: wrap; gap: 6px; max-height: 110px; overflow-y: auto; padding: 6px; background: #0f172a; border-radius: 6px; border: 1px solid #334155; }
-    .tag-btn { padding: 4px 8px; font-size: 0.75rem; font-weight: 600; background: #334155; border: none; border-radius: 4px; color: #f8fafc; cursor: pointer; transition: 0.15s; }
+    .quick-tags { display: flex; flex-wrap: wrap; gap: 5px; max-height: 90px; overflow-y: auto; padding: 6px; background: #0f172a; border-radius: 6px; border: 1px solid #334155; }
+    .tag-btn { padding: 4px 8px; font-size: 0.75rem; font-weight: 600; background: #334155; border: none; border-radius: 4px; color: #f8fafc; cursor: pointer; }
     .tag-btn:hover { background: #0284c7; }
     
-    .btn-record { padding: 12px; font-size: 1rem; font-weight: 700; border-radius: 8px; border: none; background: #0284c7; color: #fff; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
-    .btn-record:disabled { background: #475569; cursor: not-allowed; opacity: 0.7; box-shadow: none; }
+    .btn-record { padding: 12px; font-size: 0.95rem; font-weight: 700; border-radius: 8px; border: none; background: #0284c7; color: #fff; cursor: pointer; }
+    .btn-record:disabled { background: #475569; cursor: not-allowed; opacity: 0.7; }
     
-    .btn-push-gh { padding: 12px; font-size: 0.95rem; font-weight: 700; border-radius: 8px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-    .btn-download { padding: 10px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; border: 1px solid #10b981; background: rgba(16, 185, 129, 0.1); color: #10b981; cursor: pointer; }
-    .btn-pull-gh { padding: 10px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; border: 1px solid #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; cursor: pointer; }
-    .btn-clear { padding: 8px; font-size: 0.8rem; border-radius: 6px; border: 1px solid #ef4444; background: transparent; color: #ef4444; cursor: pointer; }
+    .btn-push-gh { padding: 12px; font-size: 0.95rem; font-weight: 700; border-radius: 8px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; cursor: pointer; }
+    .btn-download { padding: 10px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; border: 1px solid #10b981; background: rgba(16, 185, 129, 0.1); color: #10b981; cursor: pointer; }
+    .btn-pull-gh { padding: 10px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; border: 1px solid #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; cursor: pointer; }
+    .btn-clear { padding: 7px; font-size: 0.75rem; border-radius: 6px; border: 1px solid #ef4444; background: transparent; color: #ef4444; cursor: pointer; }
     
     .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .status-box { background: #0f172a; padding: 10px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155; }
+    .status-box { background: #0f172a; padding: 8px 10px; border-radius: 6px; font-size: 0.8rem; border: 1px solid #334155; }
     
-    .table-container { max-height: 150px; overflow-y: auto; font-size: 0.8rem; border: 1px solid #334155; border-radius: 6px; }
+    .table-container { max-height: 130px; overflow-y: auto; font-size: 0.8rem; border: 1px solid #334155; border-radius: 6px; }
     table { width: 100%; border-collapse: collapse; }
     th { background: #0f172a; color: #94a3b8; position: sticky; top: 0; }
-    td, th { padding: 6px 10px; text-align: left; border-bottom: 1px solid #334155; }
-    .btn-del-row { background: #ef4444; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; cursor: pointer; font-weight: 600; }
-    .btn-del-row:hover { background: #dc2626; }
+    td, th { padding: 5px 8px; text-align: left; border-bottom: 1px solid #334155; }
+    .btn-del-row { background: #ef4444; color: #fff; border: none; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
     
-    details.gh-config { background: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #334155; font-size: 0.8rem; }
+    details.gh-config { background: #0f172a; padding: 6px 10px; border-radius: 6px; border: 1px solid #334155; font-size: 0.75rem; }
     details.gh-config summary { cursor: pointer; color: #94a3b8; font-weight: 600; }
-    .gh-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+    .gh-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
     .gh-fields input { padding: 6px 8px; border-radius: 4px; border: 1px solid #475569; background: #1e293b; color: #fff; font-size: 0.75rem; width: 100%; }
   </style>
 </head>
@@ -63,14 +62,14 @@
   <header>
     <div class="header-titles">
       <h1>Studio Perekam Dataset Isyarat (126 Fitur)</h1>
-      <p>Rekam alfabet, angka, dan kata dua tangan langsung ke repositori GitHub</p>
+      <p>Rekam gerakan tangan langsung ke repositori GitHub</p>
     </div>
     <a href="index.html" class="nav-btn">⬅ Kembali ke Penerjemah</a>
   </header>
   
   <div class="main-container">
     <div class="video-card">
-      <video id="webcam" playsinline></video>
+      <video id="webcam" autoplay playsinline muted></video>
       <canvas id="output_canvas"></canvas>
       <div id="countdown" class="countdown-overlay">3</div>
     </div>
@@ -112,7 +111,7 @@
           <thead>
             <tr>
               <th>Label</th>
-              <th>Jumlah Sampel</th>
+              <th>Sampel</th>
               <th style="text-align:right;">Aksi</th>
             </tr>
           </thead>
@@ -123,8 +122,8 @@
       <button id="btnPushGitHub" class="btn-push-gh">🚀 Kirim ke GitHub & Latih Otomatis</button>
 
       <div class="action-row">
-        <button id="btnPullGitHub" class="btn-pull-gh">📥 Tarik Data Lama GitHub</button>
-        <button id="btnDownload" class="btn-download">💾 Unduh Backup CSV</button>
+        <button id="btnPullGitHub" class="btn-pull-gh">📥 Tarik Data Lama</button>
+        <button id="btnDownload" class="btn-download">💾 Unduh CSV</button>
       </div>
       
       <button id="btnClear" class="btn-clear">Reset / Kosongkan Memori Lokal</button>
@@ -148,11 +147,11 @@
     const ghTokenInput = document.getElementById('ghToken');
 
     let current126Landmarks = null;
-    let dataset = []; // Array kumpulan [x0, ..., z41, label]
+    let dataset = [];
     let labelCounts = {};
     let latestFileSha = null;
 
-    // Muat konfigurasi default repositori
+    // Muat konfigurasi tersimpan
     ghOwnerInput.value = localStorage.getItem('gh_owner') || 'wahyudi-lesson';
     ghRepoInput.value = localStorage.getItem('gh_repo') || 'bahasaisyarat';
     ghTokenInput.value = localStorage.getItem('gh_token') || '';
@@ -178,7 +177,6 @@
       setTimeout(() => osc.stop(), duration);
     }
 
-    // Sambungan Kerangka Sendi Jari
     const HAND_CONNECTIONS = [
       [0, 1], [1, 2], [2, 3], [3, 4],
       [0, 5], [5, 6], [6, 7], [7, 8],
@@ -188,7 +186,6 @@
       [0, 17]
     ];
 
-    // Presets Cepat
     const presets = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ..."0123456789", "HALO", "TERIMA_KASIH", "MAAF", "SAMA_SAMA"];
     const presetBox = document.getElementById('presetContainer');
     presets.forEach(p => {
@@ -218,7 +215,6 @@
 
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         results.multiHandLandmarks.forEach((landmarks) => {
-          // Garis sendi hijau
           ctx.strokeStyle = '#22c55e';
           ctx.lineWidth = 3;
           HAND_CONNECTIONS.forEach(([i, j]) => {
@@ -230,7 +226,6 @@
             ctx.stroke();
           });
 
-          // Titik sendi merah
           landmarks.forEach(pt => {
             ctx.beginPath();
             ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 4, 0, 2 * Math.PI);
@@ -245,17 +240,22 @@
       }
     });
 
+    // Jalankan Kamera HP/Tablet
     const camera = new Camera(video, {
       onFrame: async () => { await hands.send({ image: video }); },
       width: 640,
-      height: 480
+      height: 480,
+      facingMode: "user"
     });
     camera.start().then(() => {
       lblStatus.textContent = "Kamera Aktif & Siap Merekam";
       lblStatus.style.color = "#10b981";
+    }).catch(e => {
+      lblStatus.textContent = "Izin kamera ditolak / gagal";
+      lblStatus.style.color = "#ef4444";
     });
 
-    // Logika Rekam Otomatis
+    // Rekam Otomatis
     btnRecord.onclick = async () => {
       const label = targetLabelInput.value.trim().toUpperCase();
       if (!label) return alert("Harap isi label terlebih dahulu!");
@@ -295,25 +295,22 @@
       btnRecord.disabled = false;
     };
 
-    // Tampilkan data ke tabel lengkap dengan tombol Hapus
     function updateTable() {
       lblTotalRows.textContent = dataset.length;
       summaryBody.innerHTML = '';
-      
       for (const [k, v] of Object.entries(labelCounts)) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td><b>${k}</b></td>
           <td>${v} frame</td>
           <td style="text-align:right;">
-            <button class="btn-del-row" onclick="deleteClass('${k}')">🗑️ Hapus</button>
+            <button class="btn-del-row" onclick="deleteClass('${k}')">🗑️</button>
           </td>
         `;
         summaryBody.appendChild(tr);
       }
     }
 
-    // Fungsi menghapus 1 label tertentu dari memori dataset
     window.deleteClass = function(targetLabel) {
       if (!confirm(`Hapus seluruh data rekaman untuk label "${targetLabel}" dari memori?`)) return;
       dataset = dataset.filter(row => row[row.length - 1] !== targetLabel);
@@ -323,17 +320,52 @@
       lblStatus.style.color = "#ef4444";
     };
 
-    // Bangun Format Teks CSV
-    function buildCsvString() {
+    function buildCsvString(dataRows) {
       const headers = [];
       for (let i = 0; i < 42; i++) {
         headers.push(`x${i}`, `y${i}`, `z${i}`);
       }
       headers.push('label');
-      return headers.join(',') + '\n' + dataset.map(row => row.join(',')).join('\n') + '\n';
+      return headers.join(',') + '\n' + dataRows.map(row => row.join(',')).join('\n') + '\n';
     }
 
-    // Kirim Langsung ke GitHub API dengan Fitur Penggabungan Otomatis (Auto-Merge)
+    // Tarik Dataset Lama (Menggunakan Fetch URL Publik - Bebas Batas 1 MB & Tanpa Token)
+    document.getElementById('btnPullGitHub').onclick = async () => {
+      lblStatus.textContent = "Mengunduh dataset dari repositori...";
+      lblStatus.style.color = "#38bdf8";
+
+      try {
+        const res = await fetch('dataset_landmarks.csv?t=' + Date.now());
+        if (!res.ok) throw new Error("File dataset_landmarks.csv belum tersedia di repositori.");
+
+        const decodedText = await res.text();
+        const lines = decodedText.trim().split('\n');
+        if (lines.length <= 1) return alert("Dataset di repositori masih kosong.");
+
+        dataset = [];
+        labelCounts = {};
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',');
+          if (cols.length >= 127) {
+            const rowVals = cols.slice(0, 126).map(Number);
+            const lbl = cols[126].trim();
+            dataset.push([...rowVals, lbl]);
+            labelCounts[lbl] = (labelCounts[lbl] || 0) + 1;
+          }
+        }
+
+        updateTable();
+        lblStatus.textContent = `Berhasil memuat ${dataset.length} baris dataset!`;
+        lblStatus.style.color = "#10b981";
+      } catch (err) {
+        console.error(err);
+        lblStatus.textContent = "Gagal memuat: " + err.message;
+        lblStatus.style.color = "#ef4444";
+        alert(err.message);
+      }
+    };
+
+    // Kirim ke GitHub dengan Fitur Penggabungan Otomatis (Auto-Merge)
     document.getElementById('btnPushGitHub').onclick = async () => {
       if (dataset.length === 0) return alert("Belum ada data rekaman baru untuk dikirim!");
 
@@ -351,62 +383,60 @@
       const filePath = "dataset_landmarks.csv";
       const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
 
-      lblStatus.textContent = "Menyinkronkan dengan dataset lama di GitHub...";
+      lblStatus.textContent = "Menyinkronkan dengan data repositori...";
       lblStatus.style.color = "#facc15";
 
       try {
         let mergedDataset = [];
-        let existingSha = null;
 
-        // 1. Tarik dataset lama dari GitHub secara otomatis di latar belakang
+        // 1. Ambil data lama via raw fetch
+        try {
+          const rawRes = await fetch('dataset_landmarks.csv?t=' + Date.now());
+          if (rawRes.ok) {
+            const rawText = await rawRes.text();
+            const rawLines = rawText.trim().split('\n');
+            for (let i = 1; i < rawLines.length; i++) {
+              const cols = rawLines[i].split(',');
+              if (cols.length >= 127) {
+                const rowVals = cols.slice(0, 126).map(Number);
+                const lbl = cols[126].trim();
+                mergedDataset.push([...rowVals, lbl]);
+              }
+            }
+          }
+        } catch (_) {}
+
+        // 2. Ambil SHA file terbaru dari GitHub API
+        let fileSha = null;
         const getRes = await fetch(apiUrl, {
           headers: { 
             "Authorization": `Bearer ${token}`,
             "Accept": "application/vnd.github.v3+json"
           }
         });
-
         if (getRes.ok) {
           const fileData = await getRes.json();
-          existingSha = fileData.sha;
-          const decodedText = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
-          const lines = decodedText.trim().split('\n');
-
-          // Masukkan data lama (lewati baris header 0)
-          for (let i = 1; i < lines.length; i++) {
-            const cols = lines[i].split(',');
-            if (cols.length >= 127) {
-              const rowVals = cols.slice(0, 126).map(Number);
-              const lbl = cols[126].trim();
-              mergedDataset.push([...rowVals, lbl]);
-            }
-          }
+          fileSha = fileData.sha;
         }
 
-        // 2. Gabungkan data baru: perbarui label yang sama, tambahkan label yang baru
+        // 3. Gabungkan data baru: perbarui label yang sama, tambahkan yang baru
         const newLabels = Object.keys(labelCounts);
         mergedDataset = mergedDataset.filter(row => !newLabels.includes(row[row.length - 1]));
         mergedDataset = [...mergedDataset, ...dataset];
 
-        // 3. Susun teks CSV gabungan
-        const headers = [];
-        for (let i = 0; i < 42; i++) {
-          headers.push(`x${i}`, `y${i}`, `z${i}`);
-        }
-        headers.push('label');
-        const finalCsvContent = headers.join(',') + '\n' + mergedDataset.map(row => row.join(',')).join('\n') + '\n';
-
-        lblStatus.textContent = "Mengunggah dataset gabungan ke GitHub...";
-        lblStatus.style.color = "#38bdf8";
-
-        // 4. Unggah file CSV hasil gabungan
+        // 4. Susun teks CSV gabungan
+        const finalCsvContent = buildCsvString(mergedDataset);
         const encodedContent = btoa(unescape(encodeURIComponent(finalCsvContent)));
+
         const payload = {
           message: `data: update dataset_landmarks.csv (${mergedDataset.length} baris total, auto-merged)`,
           content: encodedContent,
           branch: "main"
         };
-        if (existingSha) payload.sha = existingSha;
+        if (fileSha) payload.sha = fileSha;
+
+        lblStatus.textContent = "Mengunggah data gabungan...";
+        lblStatus.style.color = "#38bdf8";
 
         const putRes = await fetch(apiUrl, {
           method: "PUT",
@@ -423,72 +453,22 @@
           throw new Error(errData.message || "Gagal melakukan commit ke GitHub");
         }
 
-        const putData = await putRes.json();
-        latestFileSha = putData.content.sha;
-
-        lblStatus.textContent = "Selesai! GitHub Actions otomatis melatih model...";
+        lblStatus.textContent = "Selesai! GitHub Actions mulai melatih model...";
         lblStatus.style.color = "#10b981";
-        alert(`Berhasil disinkronkan!\nTotal dataset di repositori sekarang: ${mergedDataset.length} baris.\nModel baru sedang dilatih otomatis oleh GitHub Actions (~2 menit).`);
+        alert(`Berhasil disinkronkan!\nTotal dataset: ${mergedDataset.length} baris.\nModel baru sedang dilatih otomatis oleh GitHub Actions (~2 menit).`);
 
       } catch (err) {
         console.error(err);
         lblStatus.textContent = "Gagal kirim: " + err.message;
         lblStatus.style.color = "#ef4444";
-        alert("Gagal sinkronisasi data: " + err.message);
-      }
-    };
-
-    // Tarik Dataset Lama dari GitHub (Manual Sync)
-    document.getElementById('btnPullGitHub').onclick = async () => {
-      const owner = ghOwnerInput.value.trim();
-      const repo = ghRepoInput.value.trim();
-      const token = ghTokenInput.value.trim();
-      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/dataset_landmarks.csv`;
-
-      lblStatus.textContent = "Mengunduh dataset dari GitHub...";
-      lblStatus.style.color = "#38bdf8";
-
-      try {
-        const headers = { "Accept": "application/vnd.github.v3+json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-
-        const res = await fetch(apiUrl, { headers });
-        if (!res.ok) throw new Error("File dataset_landmarks.csv belum ada di repositori GitHub.");
-
-        const data = await res.json();
-        latestFileSha = data.sha;
-
-        const decodedText = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
-        const lines = decodedText.trim().split('\n');
-        if (lines.length <= 1) return alert("Dataset di GitHub masih kosong.");
-
-        dataset = [];
-        labelCounts = {};
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',');
-          if (cols.length >= 127) {
-            const rowVals = cols.slice(0, 126).map(Number);
-            const lbl = cols[126].trim();
-            dataset.push([...rowVals, lbl]);
-            labelCounts[lbl] = (labelCounts[lbl] || 0) + 1;
-          }
-        }
-
-        updateTable();
-        lblStatus.textContent = `Berhasil memuat ${dataset.length} baris dari GitHub!`;
-        lblStatus.style.color = "#10b981";
-      } catch (err) {
-        console.error(err);
-        alert(err.message);
-        lblStatus.textContent = "Gagal memuat dari GitHub";
-        lblStatus.style.color = "#ef4444";
+        alert("Gagal kirim ke GitHub: " + err.message);
       }
     };
 
     // Unduh Cadangan CSV Manual
     document.getElementById('btnDownload').onclick = () => {
       if (dataset.length === 0) return alert("Belum ada data untuk diunduh!");
-      const csvContent = buildCsvString();
+      const csvContent = buildCsvString(dataset);
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -500,7 +480,7 @@
 
     // Kosongkan Memori Lokal
     document.getElementById('btnClear').onclick = () => {
-      if (confirm("Kosongkan seluruh data yang tersimpan di memori saat ini?")) {
+      if (confirm("Kosongkan data di memori peramban saat ini?")) {
         dataset = [];
         labelCounts = {};
         updateTable();

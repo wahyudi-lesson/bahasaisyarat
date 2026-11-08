@@ -1,7 +1,7 @@
 /**
  * js/app.js
  * Logika utama deteksi webcam, inferensi TensorFlow.js (126 fitur),
- * filter stabilitas, serta mode suara Otomatis (Langsung Baca) / Manual.
+ * state lock pencegah repetisi, dan sintesis suara (TTS) stabil.
  */
 
 const videoElement = document.getElementById('webcam') || document.querySelector('video');
@@ -19,14 +19,19 @@ const btnToggleMode = document.getElementById('btn-toggle-mode');
 let model = null;
 let isModelReady = false;
 
-// Pengaturan Mode Suara: false = Manual, true = Otomatis Langsung Baca
+// Mode Suara: false = Manual, true = Otomatis Langsung Baca
 let isAutoSpeak = localStorage.getItem('isAutoSpeak') === 'true';
 
-// Variabel stabilisasi deteksi (Debounce)
-let consecutiveCount = 0;
-let lastDetectedChar = "";
-const CONSECUTIVE_THRESHOLD = 7;  // Butuh 7 frame berturut-turut (~0.25 detik) agar valid
-const CONFIDENCE_THRESHOLD = 0.75; // Minimal akurasi 75%
+// Variabel Kontrol dan Debounce Cerdas
+let candidateLabel = "";
+let candidateCount = 0;
+let lastConfirmedLabel = ""; // Pengunci agar tidak mengulang kata yang sama
+let noHandFrames = 0;
+
+const CONSECUTIVE_THRESHOLD = 7;     // Butuh 7 frame konsisten (~0.25 detik)
+const CONFIDENCE_THRESHOLD = 0.75;    // Minimal keyakinan model 75%
+const NO_HAND_RESET_FRAMES = 12;     // Butuh jeda ~0.4 detik tanpa tangan untuk mereset huruf yang sama
+
 let sentenceBuffer = [];
 
 // Perbarui visual tombol mode suara
@@ -44,7 +49,6 @@ function updateModeUI() {
 }
 updateModeUI();
 
-// Event klik ubah mode suara
 if (btnToggleMode) {
   btnToggleMode.onclick = () => {
     isAutoSpeak = !isAutoSpeak;
@@ -53,7 +57,7 @@ if (btnToggleMode) {
   };
 }
 
-// 1. Inisialisasi Model TensorFlow.js & Labels
+// 1. Inisialisasi Model AI & Labels
 async function initModel() {
   try {
     console.log("Memuat model dan daftar label...");
@@ -67,7 +71,7 @@ async function initModel() {
 }
 initModel();
 
-// 2. Hubungkan Titik Sendi MediaPipe (Kerangka Tangan)
+// 2. Hubungkan Titik Sendi MediaPipe
 const HAND_CONNECTIONS = [
   [0, 1], [1, 2], [2, 3], [3, 4],
   [0, 5], [5, 6], [6, 7], [7, 8],
@@ -117,6 +121,7 @@ hands.onResults(async (results) => {
   canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
   if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+    noHandFrames = 0; // Ada tangan di kamera
     drawSkeleton(results.multiHandLandmarks);
 
     if (isModelReady && window.normalizeLandmarks126) {
@@ -126,12 +131,18 @@ hands.onResults(async (results) => {
       }
     }
   } else {
-    consecutiveCount = 0;
+    // Tidak ada tangan di frame: hitung jeda untuk reset kata yang sama
+    noHandFrames++;
+    if (noHandFrames >= NO_HAND_RESET_FRAMES) {
+      lastConfirmedLabel = ""; // Bolehkan mengulang huruf yang sama jika tangan sempat turun
+      candidateLabel = "";
+      candidateCount = 0;
+    }
     if (accuracyEl) accuracyEl.textContent = "Akurasi: 0%";
   }
 });
 
-// 4. Inferensi Model AI
+// 4. Inferensi Model AI dengan Pencegah Looping
 async function predictGesture(features126) {
   tf.tidy(() => {
     const inputTensor = tf.tensor2d([features126], [1, 126]);
@@ -153,36 +164,33 @@ async function predictGesture(features126) {
     if (currentPredictionEl) currentPredictionEl.textContent = detectedLabel;
     if (accuracyEl) accuracyEl.textContent = `Akurasi: ${confidencePct}%`;
 
-    // Validasi kestabilan pose
+    // Filter Kestabilan Pose
     if (maxProb >= CONFIDENCE_THRESHOLD) {
-      if (detectedLabel === lastDetectedChar) {
-        consecutiveCount++;
-        if (consecutiveCount === CONSECUTIVE_THRESHOLD) {
+      if (detectedLabel === candidateLabel) {
+        candidateCount++;
+        
+        // Cek apakah pose sudah cukup lama stabil DAN belum pernah dikonfirmasi sebelumnya
+        if (candidateCount >= CONSECUTIVE_THRESHOLD && detectedLabel !== lastConfirmedLabel) {
+          lastConfirmedLabel = detectedLabel; // KUNCI! Tidak akan dieksekusi lagi selama tangan diam
           appendWord(detectedLabel);
-          
-          // JIKA MODE OTOMATIS AKTIF: Langsung suarakan tanpa klik tombol
+
           if (isAutoSpeak) {
             speakText(detectedLabel);
           }
-          
-          consecutiveCount = 0;
         }
       } else {
-        lastDetectedChar = detectedLabel;
-        consecutiveCount = 1;
+        // Posisi tangan mulai berubah membentuk pose lain
+        candidateLabel = detectedLabel;
+        candidateCount = 1;
       }
     } else {
-      consecutiveCount = 0;
+      candidateCount = 0;
     }
   });
 }
 
 // 5. Pengelolaan Kalimat & Suara (Text-to-Speech)
 function appendWord(word) {
-  // Cegah penambahan kata yang sama berulang-ulang jika tangan tidak berubah posisi
-  if (sentenceBuffer.length > 0 && sentenceBuffer[sentenceBuffer.length - 1] === word) {
-    return;
-  }
   sentenceBuffer.push(word);
   renderSentence();
 }
@@ -195,14 +203,16 @@ function renderSentence() {
 
 function speakText(text) {
   if (!text || !('speechSynthesis' in window)) return;
-  
-  // Format teks untuk suara: ganti underscore jadi spasi (misal: TERIMA_KASIH -> TERIMA KASIH)
+
   const readableText = text.replace(/_/g, ' ').toLowerCase();
 
-  window.speechSynthesis.cancel(); // Hentikan suara yang sedang aktif agar tidak tumpang tindih
+  // Hentikan audio sebelumnya hanya jika kata yang dibaca benar-benar kata baru
+  window.speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(readableText);
   utterance.lang = 'id-ID';
-  utterance.rate = 1.0;
+  utterance.rate = 0.95;
+  utterance.pitch = 1.0;
   window.speechSynthesis.speak(utterance);
 }
 
@@ -221,8 +231,9 @@ if (btnClear) {
     renderSentence();
     if (currentPredictionEl) currentPredictionEl.textContent = "-";
     if (accuracyEl) accuracyEl.textContent = "Akurasi: 0%";
-    consecutiveCount = 0;
-    lastDetectedChar = "";
+    candidateCount = 0;
+    candidateLabel = "";
+    lastConfirmedLabel = "";
     window.speechSynthesis.cancel();
   };
 }

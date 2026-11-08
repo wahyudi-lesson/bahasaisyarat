@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Penerjemah Bahasa Isyarat (AI 126 Fitur)</title>
   <!-- Pustaka MediaPipe & TensorFlow.js -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -15,43 +15,37 @@
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #0f172a; color: #f8fafc; padding: 16px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    body { background: #0f172a; color: #f8fafc; padding: 12px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
     
-    /* Header & Navigasi */
-    header { width: 100%; max-width: 1000px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-    .header-titles h1 { font-size: 1.35rem; color: #38bdf8; }
-    .header-titles p { font-size: 0.85rem; color: #94a3b8; }
-    .nav-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border-radius: 8px; border: 1px solid #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; transition: 0.2s; }
+    header { width: 100%; max-width: 1000px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .header-titles h1 { font-size: 1.25rem; color: #38bdf8; }
+    .header-titles p { font-size: 0.8rem; color: #94a3b8; }
+    .nav-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 0.8rem; font-weight: 600; text-decoration: none; border-radius: 8px; border: 1px solid #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
     .nav-btn:hover { background: #0284c7; color: #fff; }
 
-    /* Layout Utama */
-    .app-container { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; max-width: 1000px; width: 100%; }
+    .app-container { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; max-width: 1000px; width: 100%; }
     .video-panel { position: relative; width: 480px; max-width: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 2px solid #334155; aspect-ratio: 4/3; }
     video, canvas { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
     canvas { position: absolute; top: 0; left: 0; }
 
-    /* Panel Hasil Terjemahan */
-    .result-panel { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 12px; }
-    .card { background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; }
-    .card h3 { font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .result-panel { flex: 1; min-width: 300px; max-width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .card { background: #1e293b; border-radius: 12px; padding: 14px; border: 1px solid #334155; }
+    .card h3 { font-size: 0.8rem; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
     
-    .current-sign-box { text-align: center; padding: 16px 10px; }
-    .prediction-char { font-size: 3.8rem; font-weight: 800; color: #38bdf8; line-height: 1.1; margin-bottom: 4px; }
-    .accuracy-value { font-size: 0.9rem; color: #94a3b8; }
+    .current-sign-box { text-align: center; padding: 14px 10px; }
+    .prediction-char { font-size: 3.5rem; font-weight: 800; color: #38bdf8; line-height: 1.1; margin-bottom: 4px; }
+    .accuracy-value { font-size: 0.85rem; color: #94a3b8; }
 
-    /* Tombol Pilihan Mode Suara */
-    .btn-mode-toggle { width: 100%; padding: 10px 14px; font-size: 0.9rem; font-weight: 700; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-mode-toggle { width: 100%; padding: 10px 12px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; cursor: pointer; transition: 0.2s; }
     .btn-mode-toggle.auto-mode { border-color: #10b981; background: rgba(16, 185, 129, 0.15); color: #34d399; }
     .btn-mode-toggle.manual-mode { border-color: #f59e0b; background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
 
-    .sentence-box { min-height: 80px; font-size: 1.15rem; font-weight: 600; color: #f8fafc; padding: 12px; background: #0f172a; border-radius: 8px; border: 1px solid #334155; line-height: 1.5; word-break: break-word; }
+    .sentence-box { min-height: 70px; font-size: 1.1rem; font-weight: 600; color: #f8fafc; padding: 10px; background: #0f172a; border-radius: 8px; border: 1px solid #334155; line-height: 1.4; word-break: break-word; }
 
-    .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
-    .btn-action { padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+    .btn-action { padding: 10px; font-size: 0.9rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; }
     .btn-speak { background: #0284c7; color: #fff; }
-    .btn-speak:hover { background: #0369a1; }
     .btn-clear { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
-    .btn-clear:hover { background: rgba(239, 68, 68, 0.1); }
   </style>
 </head>
 <body>
@@ -59,14 +53,14 @@
   <header>
     <div class="header-titles">
       <h1>Penerjemah Bahasa Isyarat</h1>
-      <p>Arahkan 1 atau 2 tangan ke kamera untuk menerjemahkan secara real-time</p>
+      <p>Arahkan tangan ke kamera untuk menerjemahkan secara langsung</p>
     </div>
     <a href="collector.html" class="nav-btn">🎙️ Buka Studio Rekam</a>
   </header>
 
   <div class="app-container">
     <div class="video-panel">
-      <video id="webcam" playsinline></video>
+      <video id="webcam" autoplay playsinline muted></video>
       <canvas id="output_canvas"></canvas>
     </div>
 

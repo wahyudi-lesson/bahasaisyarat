@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio Perekam Dataset Isyarat (126 Fitur)</title>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="js/normalizer.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: #0f172a; color: #f8fafc; padding: 16px; display: flex; flex-direction: column; align-items: center; }
+    h1 { font-size: 1.25rem; margin-bottom: 8px; color: #38bdf8; }
+    .main-container { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; max-width: 1100px; width: 100%; }
+    .video-card { position: relative; width: 480px; max-width: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 2px solid #334155; }
+    video, canvas { width: 100%; height: auto; display: block; }
+    canvas { position: absolute; top: 0; left: 0; }
+    .countdown-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: 800; color: #facc15; background: rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+    .controls-card { flex: 1; min-width: 320px; background: #1e293b; padding: 16px; border-radius: 12px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 12px; }
+    .input-group label { font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 4px; }
+    .input-group input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 1rem; }
+    .quick-tags { display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; padding: 4px; background: #0f172a; border-radius: 8px; }
+    .tag-btn { padding: 4px 10px; font-size: 0.8rem; background: #334155; border: none; border-radius: 4px; color: #f8fafc; cursor: pointer; }
+    .tag-btn:hover { background: #0284c7; }
+    .btn-record { padding: 14px; font-size: 1rem; font-weight: bold; border-radius: 8px; border: none; background: #0284c7; color: #fff; cursor: pointer; transition: 0.2s; }
+    .btn-record:disabled { background: #475569; cursor: not-allowed; }
+    .btn-download { padding: 12px; font-size: 0.95rem; font-weight: bold; border-radius: 8px; border: none; background: #10b981; color: #fff; cursor: pointer; }
+    .btn-clear { padding: 8px; font-size: 0.85rem; border-radius: 8px; border: 1px solid #ef4444; background: transparent; color: #ef4444; cursor: pointer; }
+    .status-box { background: #0f172a; padding: 10px; border-radius: 8px; font-size: 0.85rem; }
+    .table-container { max-height: 140px; overflow-y: auto; font-size: 0.8rem; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { padding: 4px 8px; text-align: left; border-bottom: 1px solid #334155; }
+  </style>
+</head>
+<body>
+
+  <h1>Studio Perekam Dataset Isyarat (126 Fitur)</h1>
+  
+  <div class="main-container">
+    <div class="video-card">
+      <video id="webcam" playsinline></video>
+      <canvas id="output_canvas"></canvas>
+      <div id="countdown" class="countdown-overlay">3</div>
+    </div>
+
+    <div class="controls-card">
+      <div class="input-group">
+        <label>Label Target (Huruf / Angka / Kosakata):</label>
+        <input type="text" id="targetLabel" value="A" placeholder="Misal: A, 1, HALO, TERIMA_KASIH">
+      </div>
+
+      <div class="input-group">
+        <label>Preset Cepat:</label>
+        <div class="quick-tags" id="presetContainer"></div>
+      </div>
+
+      <div class="input-group">
+        <label>Jumlah Frame Sekali Rekam:</label>
+        <input type="number" id="targetFrames" value="80" min="20" max="300">
+      </div>
+
+      <button id="btnStartRecord" class="btn-record">Mulai Rekam (Hitung Mundur 3d)</button>
+
+      <div class="status-box">
+        <div>Status: <b id="lblStatus" style="color:#38bdf8;">Kamera Siap</b></div>
+        <div>Total Dataset Tersimpan: <b id="lblTotalRows">0</b> baris</div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Label</th><th>Sampel</th></tr></thead>
+          <tbody id="summaryBody"></tbody>
+        </table>
+      </div>
+
+      <button id="btnDownload" class="btn-download">Unduh dataset_landmarks.csv</button>
+      <button id="btnClear" class="btn-clear">Reset / Kosongkan Data</button>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('output_canvas');
+    const ctx = canvas.getContext('2d');
+    const countdownEl = document.getElementById('countdown');
+    const lblStatus = document.getElementById('lblStatus');
+    const lblTotalRows = document.getElementById('lblTotalRows');
+    const summaryBody = document.getElementById('summaryBody');
+    const btnRecord = document.getElementById('btnStartRecord');
+    const targetLabelInput = document.getElementById('targetLabel');
+    const targetFramesInput = document.getElementById('targetFrames');
+
+    let current126Landmarks = null;
+    let dataset = []; // Array kumpulan [x0, ..., z41, label]
+    let labelCounts = {};
+    let isRecording = false;
+
+    // Inisialisasi Audio Beeper Web Audio API
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function beep(freq = 600, duration = 120) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      setTimeout(() => osc.stop(), duration);
+    }
+
+    // Buat Tombol Preset Cepat A-Z dan 0-9
+    const presets = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ..."0123456789", "HALO", "TERIMA_KASIH", "MAAF", "SAMA_SAMA"];
+    const presetBox = document.getElementById('presetContainer');
+    presets.forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'tag-btn';
+      b.textContent = p;
+      b.onclick = () => { targetLabelInput.value = p; };
+      presetBox.appendChild(b);
+    });
+
+    // Inisialisasi MediaPipe Hands (2 Tangan)
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    hands.onResults((results) => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        // Gambar kerangka tangan
+        results.multiHandLandmarks.forEach((landmarks) => {
+          landmarks.forEach(pt => {
+            ctx.beginPath();
+            ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 4, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ef4444';
+            ctx.fill();
+          });
+        });
+
+        // Ekstrak koordinat ternormalisasi 126 fitur
+        current126Landmarks = window.normalizeLandmarks126(results);
+      } else {
+        current126Landmarks = null;
+      }
+    });
+
+    const camera = new Camera(video, {
+      onFrame: async () => { await hands.send({ image: video }); },
+      width: 640,
+      height: 480
+    });
+    camera.start();
+
+    // Logika Rekam Otomatis (Burst)
+    btnRecord.onclick = async () => {
+      const label = targetLabelInput.value.trim().toUpperCase();
+      if (!label) return alert("Harap isi label terlebih dahulu!");
+      const targetCount = parseInt(targetFramesInput.value) || 80;
+
+      btnRecord.disabled = true;
+      countdownEl.style.opacity = '1';
+
+      // Hitungan mundur 3, 2, 1
+      for (let i = 3; i > 0; i--) {
+        countdownEl.textContent = i;
+        beep(500, 100);
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      countdownEl.textContent = "REKAM!";
+      beep(1000, 250);
+      await new Promise(r => setTimeout(r, 400));
+      countdownEl.style.opacity = '0';
+
+      lblStatus.textContent = `Merekam ${label}... (Gerakkan tangan perlahan)`;
+      lblStatus.style.color = "#facc15";
+
+      let collected = 0;
+      while (collected < targetCount) {
+        if (current126Landmarks) {
+          dataset.push([...current126Landmarks, label]);
+          collected++;
+          lblStatus.textContent = `Merekam ${label}: ${collected} / ${targetCount}`;
+        }
+        await new Promise(r => setTimeout(r, 40)); // ~25 FPS
+      }
+
+      beep(800, 200);
+      labelCounts[label] = (labelCounts[label] || 0) + collected;
+      updateTable();
+      lblStatus.textContent = `Selesai merekam kelas ${label}!`;
+      lblStatus.style.color = "#10b981";
+      btnRecord.disabled = false;
+    };
+
+    function updateTable() {
+      lblTotalRows.textContent = dataset.length;
+      summaryBody.innerHTML = '';
+      for (const [k, v] of Object.entries(labelCounts)) {
+        summaryBody.innerHTML += `<tr><td><b>${k}</b></td><td>${v} frame</td></tr>`;
+      }
+    }
+
+    // Unduh File dataset_landmarks.csv
+    document.getElementById('btnDownload').onclick = () => {
+      if (dataset.length === 0) return alert("Belum ada data yang direkam!");
+      
+      // Buat baris header: x0,y0,z0 ... x41,y41,z41,label
+      const headers = [];
+      for (let i = 0; i < 42; i++) {
+        headers.push(`x${i}`, `y${i}`, `z${i}`);
+      }
+      headers.push('label');
+
+      let csvContent = headers.join(',') + '\n';
+      dataset.forEach(row => {
+        csvContent += row.join(',') + '\n';
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dataset_landmarks.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    document.getElementById('btnClear').onclick = () => {
+      if (confirm("Kosongkan seluruh data yang sudah direkam?")) {
+        dataset = [];
+        labelCounts = {};
+        updateTable();
+        lblStatus.textContent = "Data telah dikosongkan";
+      }
+    };
+  </script>
+</body>
+</html>

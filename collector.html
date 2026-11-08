@@ -7,7 +7,7 @@
   <!-- MediaPipe Hands & Camera Utils -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-  <!-- Skrip Normalisasi 126 Fitur -->
+  <!-- Normalizer 126 Fitur -->
   <script src="js/normalizer.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -152,7 +152,7 @@
     let labelCounts = {};
     let latestFileSha = null;
 
-    // Muat konfigurasi default repositori wahyudi-lesson/bahasaisyarat
+    // Muat konfigurasi default repositori
     ghOwnerInput.value = localStorage.getItem('gh_owner') || 'wahyudi-lesson';
     ghRepoInput.value = localStorage.getItem('gh_repo') || 'bahasaisyarat';
     ghTokenInput.value = localStorage.getItem('gh_token') || '';
@@ -333,9 +333,9 @@
       return headers.join(',') + '\n' + dataset.map(row => row.join(',')).join('\n') + '\n';
     }
 
-    // Kirim Langsung ke GitHub API & Trigger Auto-Train Actions
+    // Kirim Langsung ke GitHub API dengan Fitur Penggabungan Otomatis (Auto-Merge)
     document.getElementById('btnPushGitHub').onclick = async () => {
-      if (dataset.length === 0) return alert("Belum ada data rekaman untuk dikirim!");
+      if (dataset.length === 0) return alert("Belum ada data rekaman baru untuk dikirim!");
 
       const owner = ghOwnerInput.value.trim();
       const repo = ghRepoInput.value.trim();
@@ -351,30 +351,62 @@
       const filePath = "dataset_landmarks.csv";
       const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
 
-      lblStatus.textContent = "Menghubungi GitHub API...";
+      lblStatus.textContent = "Menyinkronkan dengan dataset lama di GitHub...";
       lblStatus.style.color = "#facc15";
 
       try {
+        let mergedDataset = [];
+        let existingSha = null;
+
+        // 1. Tarik dataset lama dari GitHub secara otomatis di latar belakang
         const getRes = await fetch(apiUrl, {
           headers: { 
             "Authorization": `Bearer ${token}`,
             "Accept": "application/vnd.github.v3+json"
           }
         });
+
         if (getRes.ok) {
           const fileData = await getRes.json();
-          latestFileSha = fileData.sha;
+          existingSha = fileData.sha;
+          const decodedText = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
+          const lines = decodedText.trim().split('\n');
+
+          // Masukkan data lama (lewati baris header 0)
+          for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            if (cols.length >= 127) {
+              const rowVals = cols.slice(0, 126).map(Number);
+              const lbl = cols[126].trim();
+              mergedDataset.push([...rowVals, lbl]);
+            }
+          }
         }
 
-        const csvContent = buildCsvString();
-        const encodedContent = btoa(unescape(encodeURIComponent(csvContent)));
+        // 2. Gabungkan data baru: perbarui label yang sama, tambahkan label yang baru
+        const newLabels = Object.keys(labelCounts);
+        mergedDataset = mergedDataset.filter(row => !newLabels.includes(row[row.length - 1]));
+        mergedDataset = [...mergedDataset, ...dataset];
 
+        // 3. Susun teks CSV gabungan
+        const headers = [];
+        for (let i = 0; i < 42; i++) {
+          headers.push(`x${i}`, `y${i}`, `z${i}`);
+        }
+        headers.push('label');
+        const finalCsvContent = headers.join(',') + '\n' + mergedDataset.map(row => row.join(',')).join('\n') + '\n';
+
+        lblStatus.textContent = "Mengunggah dataset gabungan ke GitHub...";
+        lblStatus.style.color = "#38bdf8";
+
+        // 4. Unggah file CSV hasil gabungan
+        const encodedContent = btoa(unescape(encodeURIComponent(finalCsvContent)));
         const payload = {
-          message: `data: update dataset_landmarks.csv (${dataset.length} baris via collector)`,
+          message: `data: update dataset_landmarks.csv (${mergedDataset.length} baris total, auto-merged)`,
           content: encodedContent,
           branch: "main"
         };
-        if (latestFileSha) payload.sha = latestFileSha;
+        if (existingSha) payload.sha = existingSha;
 
         const putRes = await fetch(apiUrl, {
           method: "PUT",
@@ -394,19 +426,19 @@
         const putData = await putRes.json();
         latestFileSha = putData.content.sha;
 
-        lblStatus.textContent = "Berhasil dikirim! GitHub Actions mulai melatih model...";
+        lblStatus.textContent = "Selesai! GitHub Actions otomatis melatih model...";
         lblStatus.style.color = "#10b981";
-        alert("Sukses! File dataset_landmarks.csv berhasil diperbarui di GitHub.\n\nGitHub Actions sedang melatih model otomatis (~2 menit).");
+        alert(`Berhasil disinkronkan!\nTotal dataset di repositori sekarang: ${mergedDataset.length} baris.\nModel baru sedang dilatih otomatis oleh GitHub Actions (~2 menit).`);
 
       } catch (err) {
         console.error(err);
         lblStatus.textContent = "Gagal kirim: " + err.message;
         lblStatus.style.color = "#ef4444";
-        alert("Gagal mengirim ke GitHub: " + err.message);
+        alert("Gagal sinkronisasi data: " + err.message);
       }
     };
 
-    // Tarik Dataset Lama dari GitHub (Sinkronisasi Data)
+    // Tarik Dataset Lama dari GitHub (Manual Sync)
     document.getElementById('btnPullGitHub').onclick = async () => {
       const owner = ghOwnerInput.value.trim();
       const repo = ghRepoInput.value.trim();

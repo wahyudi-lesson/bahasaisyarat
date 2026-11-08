@@ -57,7 +57,7 @@
             "class_name": "Dense",
             "config": {
               "name": "dense_3",
-              "units": 2,
+              "units": 5,
               "activation": "softmax",
               "use_bias": true
             }
@@ -106,14 +106,14 @@
           "name": "dense_3/kernel",
           "shape": [
             64,
-            2
+            5
           ],
           "dtype": "float32"
         },
         {
           "name": "dense_3/bias",
           "shape": [
-            2
+            5
           ],
           "dtype": "float32"
         }

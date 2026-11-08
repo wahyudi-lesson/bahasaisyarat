@@ -1,0 +1,49 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# CPython / Jupyter Notebook checkpoints
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment Variables & Secrets
+.env
+.env.local
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE & Code Editor Configurations
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Dataset & Model Artifacts Mentah (Pelatihan Lokal)
+*.h5
+*.keras
+*.zip
+*.tar.gz
+training/raw_videos/
+training/temp/
+
+# Pengecualian: Pastikan folder model web tetap terunggah untuk GitHub Pages
+!model_web/
+!model_web/model.json
+!model_web/labels.json
+!model_web/*.bin

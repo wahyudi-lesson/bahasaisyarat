@@ -35,9 +35,14 @@
     .card { background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; }
     .card h3 { font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
     
-    .current-sign-box { text-align: center; padding: 20px 10px; }
-    .prediction-char { font-size: 4rem; font-weight: 800; color: #38bdf8; line-height: 1; margin-bottom: 6px; }
+    .current-sign-box { text-align: center; padding: 16px 10px; }
+    .prediction-char { font-size: 3.8rem; font-weight: 800; color: #38bdf8; line-height: 1.1; margin-bottom: 4px; }
     .accuracy-value { font-size: 0.9rem; color: #94a3b8; }
+
+    /* Tombol Pilihan Mode Suara */
+    .btn-mode-toggle { width: 100%; padding: 10px 14px; font-size: 0.9rem; font-weight: 700; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-mode-toggle.auto-mode { border-color: #10b981; background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .btn-mode-toggle.manual-mode { border-color: #f59e0b; background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
 
     .sentence-box { min-height: 80px; font-size: 1.15rem; font-weight: 600; color: #f8fafc; padding: 12px; background: #0f172a; border-radius: 8px; border: 1px solid #334155; line-height: 1.5; word-break: break-word; }
 
@@ -66,6 +71,11 @@
     </div>
 
     <div class="result-panel">
+      <!-- Pengatur Mode Suara -->
+      <button id="btn-toggle-mode" class="btn-mode-toggle manual-mode">
+        Mode Suara: 📝 Kumpulkan Kata (Klik Ucapkan)
+      </button>
+
       <div class="card current-sign-box">
         <h3>Hasil Deteksi Saat Ini</h3>
         <div id="current-sign" class="prediction-char">-</div>
@@ -83,7 +93,6 @@
     </div>
   </div>
 
-  <!-- Skrip Aplikasi -->
   <script src="js/app.js"></script>
 </body>
 </html>

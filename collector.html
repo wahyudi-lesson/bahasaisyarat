@@ -243,6 +243,69 @@
         lblStatus.textContent = "Data telah dikosongkan";
       }
     };
+    // Tambahkan fungsi ini di dalam tag <script> collector.html:
+
+async function pushDatasetToGitHub() {
+  if (dataset.length === 0) return alert("Belum ada data rekaman!");
+
+  let token = localStorage.getItem('gh_token');
+  if (!token) {
+    token = prompt("Masukkan GitHub Personal Access Token (Fine-grained / Classic dengan izin repo/contents):");
+    if (!token) return;
+    localStorage.setItem('gh_token', token);
+  }
+
+  const repoOwner = "Wahyudi-1"; // Ganti jika berbeda
+  const repoName = "sign-language-web"; // Nama repositori Anda
+  const filePath = "dataset_landmarks.csv";
+  const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
+
+  // 1. Susun string CSV
+  const headers = [];
+  for (let i = 0; i < 42; i++) headers.push(`x${i}`, `y${i}`, `z${i}`);
+  headers.push('label');
+  let csvContent = headers.join(',') + '\n' + dataset.map(row => row.join(',')).join('\n') + '\n';
+
+  lblStatus.textContent = "Menghubungi GitHub API...";
+  lblStatus.style.color = "#facc15";
+
+  try {
+    // 2. Cek apakah dataset_landmarks.csv sudah ada (untuk mengambil sha file)
+    let sha = null;
+    const checkRes = await fetch(apiUrl, {
+      headers: { "Authorization": `token ${token}` }
+    });
+    if (checkRes.ok) {
+      const fileData = await checkRes.json();
+      sha = fileData.sha;
+    }
+
+    // 3. Kirim / Update file CSV langsung ke GitHub
+    const res = await fetch(apiUrl, {
+      method: "PUT",
+      headers: {
+        "Authorization": `token ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: "data: update dataset_landmarks.csv via collector web studio",
+        content: btoa(unescape(encodeURIComponent(csvContent))),
+        sha: sha || undefined
+      })
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+
+    lblStatus.textContent = "Data terkirim! GitHub Actions sedang melatih model...";
+    lblStatus.style.color = "#10b981";
+    alert("Berhasil dikirim ke GitHub! Pelatihan AI berjalan otomatis di latar belakang (~2 menit).");
+
+  } catch (err) {
+    console.error(err);
+    alert("Gagal mengirim ke GitHub. Periksa Token Anda: " + err.message);
+    localStorage.removeItem('gh_token'); // Reset token jika invalid
+  }
+}
   </script>
 </body>
 </html>

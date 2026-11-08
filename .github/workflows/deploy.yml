@@ -1,41 +1,61 @@
-name: Deploy to GitHub Pages
+name: Train and Deploy Sign Language Web
 
 on:
   push:
-    branches: ["main"]
-  # Memungkinkan deploy manual dari tab Actions di GitHub
+    branches:
+      - main
   workflow_dispatch:
 
-# Berikan izin akses token untuk menulis deployment Pages
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
-# Cegah konflik konkurensi antar deployment yang bersamaan
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  train-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tensorflow scikit-learn pandas numpy
+
+      - name: Jalankan Pelatihan AI
+        run: |
+          if [ -f "dataset_landmarks.csv" ]; then
+            python train.py
+          else
+            echo "dataset_landmarks.csv tidak ditemukan, lewati tahap pelatihan."
+          fi
+
+      - name: Simpan Hasil Model ke Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add model_web/
+          git diff --staged --quiet || git commit -m "chore: auto-update model_web from training"
+          git push || true
+
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload Artifact
+      - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Unggah seluruh folder root (index.html, css, js, model_web)
           path: '.'
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy Langsung ke GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

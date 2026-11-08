@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Penerjemah Bahasa Isyarat</title>
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Dependensi CDN: MediaPipe & TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>Penerjemah Bahasa Isyarat</h1>
+      <p>Arahkan tangan ke webcam untuk mendeteksi isyarat secara real-time</p>
+    </header>
+
+    <div class="main-content">
+      <div class="camera-card">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="output-canvas"></canvas>
+        <div id="loading-overlay">Memuat Model AI...</div>
+      </div>
+
+      <div class="result-card">
+        <h2>Hasil Terjemahan</h2>
+        <div class="prediction-box">
+          <span id="predicted-char">-</span>
+          <span id="confidence-score">Akurasi: 0%</span>
+        </div>
+        
+        <div class="sentence-box">
+          <label>Rangkaian Kata:</label>
+          <p id="accumulated-text">Belum ada input...</p>
+        </div>
+
+        <div class="actions">
+          <button id="btn-speak" class="btn primary">Ucapkan Kalimat</button>
+          <button id="btn-clear" class="btn secondary">Hapus Teks</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Muat modul helper terlebih dahulu -->
+  <script src="js/labels.js"></script>
+  <script src="js/normalizer.js"></script>
+  
+  <!-- Muat aplikasi utama -->
+  <script src="js/app.js"></script>
+</body>
+</html>

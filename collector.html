@@ -10,8 +10,13 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: #0f172a; color: #f8fafc; padding: 16px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-    h1 { font-size: 1.25rem; margin-bottom: 4px; color: #38bdf8; text-align: center; }
-    p.subtitle { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; text-align: center; }
+    
+    header { width: 100%; max-width: 1100px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .header-titles h1 { font-size: 1.35rem; color: #38bdf8; }
+    .header-titles p { font-size: 0.85rem; color: #94a3b8; }
+    .nav-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border-radius: 8px; border: 1px solid #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; transition: 0.2s; }
+    .nav-btn:hover { background: #0284c7; color: #fff; }
+
     .main-container { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; max-width: 1100px; width: 100%; }
     
     .video-card { position: relative; width: 480px; max-width: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 2px solid #334155; aspect-ratio: 4/3; }
@@ -50,8 +55,13 @@
 </head>
 <body>
 
-  <h1>Studio Perekam Dataset Isyarat (126 Fitur)</h1>
-  <p class="subtitle">Rekam alfabet, angka, dan isyarat dua tangan langsung ke repositori GitHub</p>
+  <header>
+    <div class="header-titles">
+      <h1>Studio Perekam Dataset Isyarat (126 Fitur)</h1>
+      <p>Rekam alfabet, angka, dan kata dua tangan langsung ke repositori GitHub</p>
+    </div>
+    <a href="index.html" class="nav-btn">⬅ Kembali ke Penerjemah</a>
+  </header>
   
   <div class="main-container">
     <div class="video-card">
@@ -64,8 +74,8 @@
       <details class="gh-config" open>
         <summary>⚙️ Pengaturan Repositori & Token GitHub</summary>
         <div class="gh-fields">
-          <input type="text" id="ghOwner" placeholder="Owner" value="Wahyudi-1">
-          <input type="text" id="ghRepo" placeholder="Repo" value="sign-language-web">
+          <input type="text" id="ghOwner" placeholder="Owner" value="wahyudi-lesson">
+          <input type="text" id="ghRepo" placeholder="Repo" value="bahasaisyarat">
           <input type="password" id="ghToken" placeholder="GitHub Personal Access Token" style="grid-column: span 2;">
         </div>
       </details>
@@ -131,9 +141,9 @@
     let labelCounts = {};
     let latestFileSha = null;
 
-    // Muat konfigurasi GitHub tersimpan di tablet
-    ghOwnerInput.value = localStorage.getItem('gh_owner') || 'Wahyudi-1';
-    ghRepoInput.value = localStorage.getItem('gh_repo') || 'sign-language-web';
+    // Muat konfigurasi default repositori wahyudi-lesson/bahasaisyarat
+    ghOwnerInput.value = localStorage.getItem('gh_owner') || 'wahyudi-lesson';
+    ghRepoInput.value = localStorage.getItem('gh_repo') || 'bahasaisyarat';
     ghTokenInput.value = localStorage.getItem('gh_token') || '';
 
     [ghOwnerInput, ghRepoInput, ghTokenInput].forEach(inp => {
@@ -144,7 +154,6 @@
       });
     });
 
-    // Web Audio API Beeper
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function beep(freq = 600, duration = 120) {
       if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -157,7 +166,6 @@
       setTimeout(() => osc.stop(), duration);
     }
 
-    // Sambungan Kerangka Sendi Jari
     const HAND_CONNECTIONS = [
       [0, 1], [1, 2], [2, 3], [3, 4],
       [0, 5], [5, 6], [6, 7], [7, 8],
@@ -167,7 +175,6 @@
       [0, 17]
     ];
 
-    // Presets A-Z, 0-9, Kata Populer
     const presets = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ..."0123456789", "HALO", "TERIMA_KASIH", "MAAF", "SAMA_SAMA"];
     const presetBox = document.getElementById('presetContainer');
     presets.forEach(p => {
@@ -178,7 +185,6 @@
       presetBox.appendChild(b);
     });
 
-    // Inisialisasi MediaPipe Hands
     const hands = new Hands({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
     });
@@ -197,7 +203,6 @@
 
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         results.multiHandLandmarks.forEach((landmarks) => {
-          // Gambar garis hijau antar sendi
           ctx.strokeStyle = '#22c55e';
           ctx.lineWidth = 3;
           HAND_CONNECTIONS.forEach(([i, j]) => {
@@ -209,7 +214,6 @@
             ctx.stroke();
           });
 
-          // Gambar titik merah sendi
           landmarks.forEach(pt => {
             ctx.beginPath();
             ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 4, 0, 2 * Math.PI);
@@ -234,7 +238,6 @@
       lblStatus.style.color = "#10b981";
     });
 
-    // Logika Rekam Otomatis
     btnRecord.onclick = async () => {
       const label = targetLabelInput.value.trim().toUpperCase();
       if (!label) return alert("Harap isi label terlebih dahulu!");
@@ -282,7 +285,6 @@
       }
     }
 
-    // Bangun Format Teks CSV
     function buildCsvString() {
       const headers = [];
       for (let i = 0; i < 42; i++) {
@@ -292,7 +294,6 @@
       return headers.join(',') + '\n' + dataset.map(row => row.join(',')).join('\n') + '\n';
     }
 
-    // Kirim Langsung ke GitHub API & Trigger Auto-Train Actions
     document.getElementById('btnPushGitHub').onclick = async () => {
       if (dataset.length === 0) return alert("Belum ada data rekaman untuk dikirim!");
 
@@ -365,7 +366,6 @@
       }
     };
 
-    // Tarik Dataset Lama dari GitHub (Merge Data)
     document.getElementById('btnPullGitHub').onclick = async () => {
       const owner = ghOwnerInput.value.trim();
       const repo = ghRepoInput.value.trim();
@@ -412,7 +412,6 @@
       }
     };
 
-    // Unduh Cadangan CSV Manual
     document.getElementById('btnDownload').onclick = () => {
       if (dataset.length === 0) return alert("Belum ada data untuk diunduh!");
       const csvContent = buildCsvString();
@@ -425,7 +424,6 @@
       URL.revokeObjectURL(url);
     };
 
-    // Kosongkan Memori Lokal
     document.getElementById('btnClear').onclick = () => {
       if (confirm("Kosongkan data yang tersimpan di memori saat ini?")) {
         dataset = [];

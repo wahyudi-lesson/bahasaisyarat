@@ -8,33 +8,50 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
   <script src="js/normalizer.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-    body { background: #0f172a; color: #f8fafc; padding: 16px; display: flex; flex-direction: column; align-items: center; }
-    h1 { font-size: 1.25rem; margin-bottom: 8px; color: #38bdf8; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #0f172a; color: #f8fafc; padding: 16px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    h1 { font-size: 1.25rem; margin-bottom: 4px; color: #38bdf8; text-align: center; }
+    p.subtitle { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; text-align: center; }
     .main-container { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; max-width: 1100px; width: 100%; }
-    .video-card { position: relative; width: 480px; max-width: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 2px solid #334155; }
-    video, canvas { width: 100%; height: auto; display: block; }
+    
+    .video-card { position: relative; width: 480px; max-width: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 2px solid #334155; aspect-ratio: 4/3; }
+    video, canvas { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
     canvas { position: absolute; top: 0; left: 0; }
-    .countdown-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: 800; color: #facc15; background: rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+    .countdown-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: 800; color: #facc15; background: rgba(0,0,0,0.55); pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 10; text-shadow: 0 4px 12px rgba(0,0,0,0.8); }
+    
     .controls-card { flex: 1; min-width: 320px; background: #1e293b; padding: 16px; border-radius: 12px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 12px; }
-    .input-group label { font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 4px; }
-    .input-group input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 1rem; }
-    .quick-tags { display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; padding: 4px; background: #0f172a; border-radius: 8px; }
-    .tag-btn { padding: 4px 10px; font-size: 0.8rem; background: #334155; border: none; border-radius: 4px; color: #f8fafc; cursor: pointer; }
+    .input-group label { font-size: 0.8rem; font-weight: 600; color: #94a3b8; display: block; margin-bottom: 4px; }
+    .input-group input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.95rem; }
+    
+    .quick-tags { display: flex; flex-wrap: wrap; gap: 6px; max-height: 110px; overflow-y: auto; padding: 6px; background: #0f172a; border-radius: 6px; border: 1px solid #334155; }
+    .tag-btn { padding: 4px 8px; font-size: 0.75rem; font-weight: 600; background: #334155; border: none; border-radius: 4px; color: #f8fafc; cursor: pointer; transition: 0.15s; }
     .tag-btn:hover { background: #0284c7; }
-    .btn-record { padding: 14px; font-size: 1rem; font-weight: bold; border-radius: 8px; border: none; background: #0284c7; color: #fff; cursor: pointer; transition: 0.2s; }
-    .btn-record:disabled { background: #475569; cursor: not-allowed; }
-    .btn-download { padding: 12px; font-size: 0.95rem; font-weight: bold; border-radius: 8px; border: none; background: #10b981; color: #fff; cursor: pointer; }
-    .btn-clear { padding: 8px; font-size: 0.85rem; border-radius: 8px; border: 1px solid #ef4444; background: transparent; color: #ef4444; cursor: pointer; }
-    .status-box { background: #0f172a; padding: 10px; border-radius: 8px; font-size: 0.85rem; }
-    .table-container { max-height: 140px; overflow-y: auto; font-size: 0.8rem; }
+    
+    .btn-record { padding: 12px; font-size: 1rem; font-weight: 700; border-radius: 8px; border: none; background: #0284c7; color: #fff; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+    .btn-record:disabled { background: #475569; cursor: not-allowed; opacity: 0.7; box-shadow: none; }
+    
+    .btn-push-gh { padding: 12px; font-size: 0.95rem; font-weight: 700; border-radius: 8px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+    .btn-download { padding: 10px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; border: 1px solid #10b981; background: rgba(16, 185, 129, 0.1); color: #10b981; cursor: pointer; }
+    .btn-pull-gh { padding: 10px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; border: 1px solid #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; cursor: pointer; }
+    .btn-clear { padding: 8px; font-size: 0.8rem; border-radius: 6px; border: 1px solid #ef4444; background: transparent; color: #ef4444; cursor: pointer; }
+    
+    .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .status-box { background: #0f172a; padding: 10px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155; }
+    .table-container { max-height: 120px; overflow-y: auto; font-size: 0.8rem; border: 1px solid #334155; border-radius: 6px; }
     table { width: 100%; border-collapse: collapse; }
-    td, th { padding: 4px 8px; text-align: left; border-bottom: 1px solid #334155; }
+    th { background: #0f172a; color: #94a3b8; position: sticky; top: 0; }
+    td, th { padding: 6px 10px; text-align: left; border-bottom: 1px solid #334155; }
+    
+    details.gh-config { background: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #334155; font-size: 0.8rem; }
+    details.gh-config summary { cursor: pointer; color: #94a3b8; font-weight: 600; }
+    .gh-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+    .gh-fields input { padding: 6px 8px; border-radius: 4px; border: 1px solid #475569; background: #1e293b; color: #fff; font-size: 0.75rem; width: 100%; }
   </style>
 </head>
 <body>
 
   <h1>Studio Perekam Dataset Isyarat (126 Fitur)</h1>
+  <p class="subtitle">Rekam alfabet, angka, dan isyarat dua tangan langsung ke repositori GitHub</p>
   
   <div class="main-container">
     <div class="video-card">
@@ -44,13 +61,22 @@
     </div>
 
     <div class="controls-card">
+      <details class="gh-config" open>
+        <summary>⚙️ Pengaturan Repositori & Token GitHub</summary>
+        <div class="gh-fields">
+          <input type="text" id="ghOwner" placeholder="Owner" value="Wahyudi-1">
+          <input type="text" id="ghRepo" placeholder="Repo" value="sign-language-web">
+          <input type="password" id="ghToken" placeholder="GitHub Personal Access Token" style="grid-column: span 2;">
+        </div>
+      </details>
+
       <div class="input-group">
         <label>Label Target (Huruf / Angka / Kosakata):</label>
-        <input type="text" id="targetLabel" value="A" placeholder="Misal: A, 1, HALO, TERIMA_KASIH">
+        <input type="text" id="targetLabel" value="A" placeholder="Misal: A, B, 1, HALO, TERIMA_KASIH">
       </div>
 
       <div class="input-group">
-        <label>Preset Cepat:</label>
+        <label>Pilihan Cepat:</label>
         <div class="quick-tags" id="presetContainer"></div>
       </div>
 
@@ -62,19 +88,25 @@
       <button id="btnStartRecord" class="btn-record">Mulai Rekam (Hitung Mundur 3d)</button>
 
       <div class="status-box">
-        <div>Status: <b id="lblStatus" style="color:#38bdf8;">Kamera Siap</b></div>
-        <div>Total Dataset Tersimpan: <b id="lblTotalRows">0</b> baris</div>
+        <div>Status: <b id="lblStatus" style="color:#38bdf8;">Kamera Memuat...</b></div>
+        <div>Total Dataset di Memori: <b id="lblTotalRows">0</b> baris</div>
       </div>
 
       <div class="table-container">
         <table>
-          <thead><tr><th>Label</th><th>Sampel</th></tr></thead>
+          <thead><tr><th>Label</th><th>Jumlah Sampel</th></tr></thead>
           <tbody id="summaryBody"></tbody>
         </table>
       </div>
 
-      <button id="btnDownload" class="btn-download">Unduh dataset_landmarks.csv</button>
-      <button id="btnClear" class="btn-clear">Reset / Kosongkan Data</button>
+      <button id="btnPushGitHub" class="btn-push-gh">🚀 Kirim ke GitHub & Latih Otomatis</button>
+
+      <div class="action-row">
+        <button id="btnPullGitHub" class="btn-pull-gh">📥 Tarik Data Lama GitHub</button>
+        <button id="btnDownload" class="btn-download">💾 Unduh Backup CSV</button>
+      </div>
+      
+      <button id="btnClear" class="btn-clear">Reset / Kosongkan Memori Lokal</button>
     </div>
   </div>
 
@@ -89,13 +121,30 @@
     const btnRecord = document.getElementById('btnStartRecord');
     const targetLabelInput = document.getElementById('targetLabel');
     const targetFramesInput = document.getElementById('targetFrames');
+    
+    const ghOwnerInput = document.getElementById('ghOwner');
+    const ghRepoInput = document.getElementById('ghRepo');
+    const ghTokenInput = document.getElementById('ghToken');
 
     let current126Landmarks = null;
-    let dataset = []; // Array kumpulan [x0, ..., z41, label]
+    let dataset = [];
     let labelCounts = {};
-    let isRecording = false;
+    let latestFileSha = null;
 
-    // Inisialisasi Audio Beeper Web Audio API
+    // Muat konfigurasi GitHub tersimpan di tablet
+    ghOwnerInput.value = localStorage.getItem('gh_owner') || 'Wahyudi-1';
+    ghRepoInput.value = localStorage.getItem('gh_repo') || 'sign-language-web';
+    ghTokenInput.value = localStorage.getItem('gh_token') || '';
+
+    [ghOwnerInput, ghRepoInput, ghTokenInput].forEach(inp => {
+      inp.addEventListener('input', () => {
+        localStorage.setItem('gh_owner', ghOwnerInput.value.trim());
+        localStorage.setItem('gh_repo', ghRepoInput.value.trim());
+        localStorage.setItem('gh_token', ghTokenInput.value.trim());
+      });
+    });
+
+    // Web Audio API Beeper
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function beep(freq = 600, duration = 120) {
       if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -108,7 +157,17 @@
       setTimeout(() => osc.stop(), duration);
     }
 
-    // Buat Tombol Preset Cepat A-Z dan 0-9
+    // Sambungan Kerangka Sendi Jari
+    const HAND_CONNECTIONS = [
+      [0, 1], [1, 2], [2, 3], [3, 4],
+      [0, 5], [5, 6], [6, 7], [7, 8],
+      [5, 9], [9, 10], [10, 11], [11, 12],
+      [9, 13], [13, 14], [14, 15], [15, 16],
+      [13, 17], [17, 18], [18, 19], [19, 20],
+      [0, 17]
+    ];
+
+    // Presets A-Z, 0-9, Kata Populer
     const presets = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", ..."0123456789", "HALO", "TERIMA_KASIH", "MAAF", "SAMA_SAMA"];
     const presetBox = document.getElementById('presetContainer');
     presets.forEach(p => {
@@ -119,7 +178,7 @@
       presetBox.appendChild(b);
     });
 
-    // Inisialisasi MediaPipe Hands (2 Tangan)
+    // Inisialisasi MediaPipe Hands
     const hands = new Hands({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
     });
@@ -137,8 +196,20 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        // Gambar kerangka tangan
         results.multiHandLandmarks.forEach((landmarks) => {
+          // Gambar garis hijau antar sendi
+          ctx.strokeStyle = '#22c55e';
+          ctx.lineWidth = 3;
+          HAND_CONNECTIONS.forEach(([i, j]) => {
+            const p1 = landmarks[i];
+            const p2 = landmarks[j];
+            ctx.beginPath();
+            ctx.moveTo(p1.x * canvas.width, p1.y * canvas.height);
+            ctx.lineTo(p2.x * canvas.width, p2.y * canvas.height);
+            ctx.stroke();
+          });
+
+          // Gambar titik merah sendi
           landmarks.forEach(pt => {
             ctx.beginPath();
             ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 4, 0, 2 * Math.PI);
@@ -147,8 +218,7 @@
           });
         });
 
-        // Ekstrak koordinat ternormalisasi 126 fitur
-        current126Landmarks = window.normalizeLandmarks126(results);
+        current126Landmarks = window.normalizeLandmarks126 ? window.normalizeLandmarks126(results) : null;
       } else {
         current126Landmarks = null;
       }
@@ -159,9 +229,12 @@
       width: 640,
       height: 480
     });
-    camera.start();
+    camera.start().then(() => {
+      lblStatus.textContent = "Kamera Aktif & Siap Merekam";
+      lblStatus.style.color = "#10b981";
+    });
 
-    // Logika Rekam Otomatis (Burst)
+    // Logika Rekam Otomatis
     btnRecord.onclick = async () => {
       const label = targetLabelInput.value.trim().toUpperCase();
       if (!label) return alert("Harap isi label terlebih dahulu!");
@@ -170,7 +243,6 @@
       btnRecord.disabled = true;
       countdownEl.style.opacity = '1';
 
-      // Hitungan mundur 3, 2, 1
       for (let i = 3; i > 0; i--) {
         countdownEl.textContent = i;
         beep(500, 100);
@@ -181,7 +253,7 @@
       await new Promise(r => setTimeout(r, 400));
       countdownEl.style.opacity = '0';
 
-      lblStatus.textContent = `Merekam ${label}... (Gerakkan tangan perlahan)`;
+      lblStatus.textContent = `Merekam ${label}... (Gerakkan sudut tangan perlahan)`;
       lblStatus.style.color = "#facc15";
 
       let collected = 0;
@@ -191,7 +263,7 @@
           collected++;
           lblStatus.textContent = `Merekam ${label}: ${collected} / ${targetCount}`;
         }
-        await new Promise(r => setTimeout(r, 40)); // ~25 FPS
+        await new Promise(r => setTimeout(r, 40));
       }
 
       beep(800, 200);
@@ -210,22 +282,140 @@
       }
     }
 
-    // Unduh File dataset_landmarks.csv
-    document.getElementById('btnDownload').onclick = () => {
-      if (dataset.length === 0) return alert("Belum ada data yang direkam!");
-      
-      // Buat baris header: x0,y0,z0 ... x41,y41,z41,label
+    // Bangun Format Teks CSV
+    function buildCsvString() {
       const headers = [];
       for (let i = 0; i < 42; i++) {
         headers.push(`x${i}`, `y${i}`, `z${i}`);
       }
       headers.push('label');
+      return headers.join(',') + '\n' + dataset.map(row => row.join(',')).join('\n') + '\n';
+    }
 
-      let csvContent = headers.join(',') + '\n';
-      dataset.forEach(row => {
-        csvContent += row.join(',') + '\n';
-      });
+    // Kirim Langsung ke GitHub API & Trigger Auto-Train Actions
+    document.getElementById('btnPushGitHub').onclick = async () => {
+      if (dataset.length === 0) return alert("Belum ada data rekaman untuk dikirim!");
 
+      const owner = ghOwnerInput.value.trim();
+      const repo = ghRepoInput.value.trim();
+      let token = ghTokenInput.value.trim();
+
+      if (!token) {
+        token = prompt("Masukkan GitHub Fine-grained Personal Access Token:");
+        if (!token) return;
+        ghTokenInput.value = token;
+        localStorage.setItem('gh_token', token);
+      }
+
+      const filePath = "dataset_landmarks.csv";
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
+
+      lblStatus.textContent = "Menghubungi GitHub API...";
+      lblStatus.style.color = "#facc15";
+
+      try {
+        const getRes = await fetch(apiUrl, {
+          headers: { 
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github.v3+json"
+          }
+        });
+        if (getRes.ok) {
+          const fileData = await getRes.json();
+          latestFileSha = fileData.sha;
+        }
+
+        const csvContent = buildCsvString();
+        const encodedContent = btoa(unescape(encodeURIComponent(csvContent)));
+
+        const payload = {
+          message: `data: update dataset_landmarks.csv (${dataset.length} baris via collector)`,
+          content: encodedContent,
+          branch: "main"
+        };
+        if (latestFileSha) payload.sha = latestFileSha;
+
+        const putRes = await fetch(apiUrl, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github.v3+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!putRes.ok) {
+          const errData = await putRes.json();
+          throw new Error(errData.message || "Gagal melakukan commit ke GitHub");
+        }
+
+        const putData = await putRes.json();
+        latestFileSha = putData.content.sha;
+
+        lblStatus.textContent = "Berhasil dikirim! GitHub Actions mulai melatih model...";
+        lblStatus.style.color = "#10b981";
+        alert("Sukses! File dataset_landmarks.csv berhasil diperbarui di GitHub.\n\nGitHub Actions sedang melatih model otomatis (~2 menit).");
+
+      } catch (err) {
+        console.error(err);
+        lblStatus.textContent = "Gagal kirim: " + err.message;
+        lblStatus.style.color = "#ef4444";
+        alert("Gagal mengirim ke GitHub: " + err.message);
+      }
+    };
+
+    // Tarik Dataset Lama dari GitHub (Merge Data)
+    document.getElementById('btnPullGitHub').onclick = async () => {
+      const owner = ghOwnerInput.value.trim();
+      const repo = ghRepoInput.value.trim();
+      const token = ghTokenInput.value.trim();
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/dataset_landmarks.csv`;
+
+      lblStatus.textContent = "Mengunduh dataset dari GitHub...";
+      lblStatus.style.color = "#38bdf8";
+
+      try {
+        const headers = { "Accept": "application/vnd.github.v3+json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch(apiUrl, { headers });
+        if (!res.ok) throw new Error("File dataset_landmarks.csv belum ada di repositori GitHub.");
+
+        const data = await res.json();
+        latestFileSha = data.sha;
+
+        const decodedText = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
+        const lines = decodedText.trim().split('\n');
+        if (lines.length <= 1) return alert("Dataset di GitHub masih kosong.");
+
+        dataset = [];
+        labelCounts = {};
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',');
+          if (cols.length >= 127) {
+            const rowVals = cols.slice(0, 126).map(Number);
+            const lbl = cols[126].trim();
+            dataset.push([...rowVals, lbl]);
+            labelCounts[lbl] = (labelCounts[lbl] || 0) + 1;
+          }
+        }
+
+        updateTable();
+        lblStatus.textContent = `Berhasil memuat ${dataset.length} baris dari GitHub!`;
+        lblStatus.style.color = "#10b981";
+      } catch (err) {
+        console.error(err);
+        alert(err.message);
+        lblStatus.textContent = "Gagal memuat dari GitHub";
+        lblStatus.style.color = "#ef4444";
+      }
+    };
+
+    // Unduh Cadangan CSV Manual
+    document.getElementById('btnDownload').onclick = () => {
+      if (dataset.length === 0) return alert("Belum ada data untuk diunduh!");
+      const csvContent = buildCsvString();
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -235,77 +425,15 @@
       URL.revokeObjectURL(url);
     };
 
+    // Kosongkan Memori Lokal
     document.getElementById('btnClear').onclick = () => {
-      if (confirm("Kosongkan seluruh data yang sudah direkam?")) {
+      if (confirm("Kosongkan data yang tersimpan di memori saat ini?")) {
         dataset = [];
         labelCounts = {};
         updateTable();
-        lblStatus.textContent = "Data telah dikosongkan";
+        lblStatus.textContent = "Data di memori telah dibersihkan";
       }
     };
-    // Tambahkan fungsi ini di dalam tag <script> collector.html:
-
-async function pushDatasetToGitHub() {
-  if (dataset.length === 0) return alert("Belum ada data rekaman!");
-
-  let token = localStorage.getItem('gh_token');
-  if (!token) {
-    token = prompt("Masukkan GitHub Personal Access Token (Fine-grained / Classic dengan izin repo/contents):");
-    if (!token) return;
-    localStorage.setItem('gh_token', token);
-  }
-
-  const repoOwner = "Wahyudi-1"; // Ganti jika berbeda
-  const repoName = "sign-language-web"; // Nama repositori Anda
-  const filePath = "dataset_landmarks.csv";
-  const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
-
-  // 1. Susun string CSV
-  const headers = [];
-  for (let i = 0; i < 42; i++) headers.push(`x${i}`, `y${i}`, `z${i}`);
-  headers.push('label');
-  let csvContent = headers.join(',') + '\n' + dataset.map(row => row.join(',')).join('\n') + '\n';
-
-  lblStatus.textContent = "Menghubungi GitHub API...";
-  lblStatus.style.color = "#facc15";
-
-  try {
-    // 2. Cek apakah dataset_landmarks.csv sudah ada (untuk mengambil sha file)
-    let sha = null;
-    const checkRes = await fetch(apiUrl, {
-      headers: { "Authorization": `token ${token}` }
-    });
-    if (checkRes.ok) {
-      const fileData = await checkRes.json();
-      sha = fileData.sha;
-    }
-
-    // 3. Kirim / Update file CSV langsung ke GitHub
-    const res = await fetch(apiUrl, {
-      method: "PUT",
-      headers: {
-        "Authorization": `token ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message: "data: update dataset_landmarks.csv via collector web studio",
-        content: btoa(unescape(encodeURIComponent(csvContent))),
-        sha: sha || undefined
-      })
-    });
-
-    if (!res.ok) throw new Error(await res.text());
-
-    lblStatus.textContent = "Data terkirim! GitHub Actions sedang melatih model...";
-    lblStatus.style.color = "#10b981";
-    alert("Berhasil dikirim ke GitHub! Pelatihan AI berjalan otomatis di latar belakang (~2 menit).");
-
-  } catch (err) {
-    console.error(err);
-    alert("Gagal mengirim ke GitHub. Periksa Token Anda: " + err.message);
-    localStorage.removeItem('gh_token'); // Reset token jika invalid
-  }
-}
   </script>
 </body>
 </html>

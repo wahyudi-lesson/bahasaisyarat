@@ -4,44 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Penerjemah Bahasa Isyarat (AI 126 Fitur)</title>
-  <!-- Pustaka MediaPipe & TensorFlow.js -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-
-  <!-- Skrip Pendukung -->
   <script src="js/normalizer.js"></script>
   <script src="js/labels.js"></script>
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: #0f172a; color: #f8fafc; padding: 12px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-    
     header { width: 100%; max-width: 1000px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
     .header-titles h1 { font-size: 1.25rem; color: #38bdf8; }
     .header-titles p { font-size: 0.8rem; color: #94a3b8; }
     .nav-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 0.8rem; font-weight: 600; text-decoration: none; border-radius: 8px; border: 1px solid #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
-    .nav-btn:hover { background: #0284c7; color: #fff; }
-
     .app-container { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; max-width: 1000px; width: 100%; }
     .video-panel { position: relative; width: 480px; max-width: 100%; border-radius: 12px; overflow: hidden; background: #000; border: 2px solid #334155; aspect-ratio: 4/3; }
     video, canvas { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
     canvas { position: absolute; top: 0; left: 0; }
-
     .result-panel { flex: 1; min-width: 300px; max-width: 100%; display: flex; flex-direction: column; gap: 10px; }
     .card { background: #1e293b; border-radius: 12px; padding: 14px; border: 1px solid #334155; }
     .card h3 { font-size: 0.8rem; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
-    
     .current-sign-box { text-align: center; padding: 14px 10px; }
     .prediction-char { font-size: 3.5rem; font-weight: 800; color: #38bdf8; line-height: 1.1; margin-bottom: 4px; }
     .accuracy-value { font-size: 0.85rem; color: #94a3b8; }
-
-    .btn-mode-toggle { width: 100%; padding: 10px 12px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; cursor: pointer; transition: 0.2s; }
+    .status-badge { font-size: 0.8rem; text-align: center; padding: 8px 10px; background: #0f172a; border-radius: 8px; border: 1px solid #334155; font-weight: 600; }
+    .btn-mode-toggle { width: 100%; padding: 10px 12px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; cursor: pointer; }
     .btn-mode-toggle.auto-mode { border-color: #10b981; background: rgba(16, 185, 129, 0.15); color: #34d399; }
     .btn-mode-toggle.manual-mode { border-color: #f59e0b; background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-
     .sentence-box { min-height: 70px; font-size: 1.1rem; font-weight: 600; color: #f8fafc; padding: 10px; background: #0f172a; border-radius: 8px; border: 1px solid #334155; line-height: 1.4; word-break: break-word; }
-
     .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
     .btn-action { padding: 10px; font-size: 0.9rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; }
     .btn-speak { background: #0284c7; color: #fff; }
@@ -65,7 +54,10 @@
     </div>
 
     <div class="result-panel">
-      <!-- Pengatur Mode Suara -->
+      <div id="ai-model-status" class="status-badge" style="color:#facc15;">
+        ⏳ Menghubungkan ke Model AI...
+      </div>
+
       <button id="btn-toggle-mode" class="btn-mode-toggle manual-mode">
         Mode Suara: 📝 Kumpulkan Kata (Klik Ucapkan)
       </button>
